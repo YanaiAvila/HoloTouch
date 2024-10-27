@@ -1,10 +1,16 @@
 import cv2
 import mediapipe as mp
 import pyautogui
+import numpy as np
 import random
 from util import get_angle, get_distance
 from pynput.mouse import Button, Controller
 mouse = Controller()
+import math
+from pynput.keyboard import Controller as KeyboardController, Key
+keyboard = KeyboardController()
+import time
+
 
 # Get screen dimensions with pyautogui
 screen_width, screen_height = pyautogui.size()
@@ -91,9 +97,117 @@ def is_screenshot(landmark_list, thumb_index_dist):
     )
 
 
+def zoom_slider_control(landmark_list, last_pinch_distance):
+    # Calculate current pinch distance between thumb (landmark 4) and index finger (landmark 8)
+    pinch_distance = get_distance([landmark_list[4], landmark_list[8]])
+
+    # Threshold for starting zoom (when pointer and thumb are close enough to "touch")
+    pinch_threshold = 20
+
+    # Only perform zoom when pinch distance is small enough (fingers are touching)
+    if pinch_distance < pinch_threshold:
+        # Map pinch distance to zoom level; the further apart, the stronger the zoom in/out
+        zoom_level = np.interp(pinch_distance, [0, 100], [-10, 10])  # Adjust zoom sensitivity
+
+        # If the new distance is significantly larger or smaller than the last distance, zoom in or out
+        if last_pinch_distance is not None:
+            if pinch_distance > last_pinch_distance:
+                pyautogui.scroll(int(zoom_level))  # Zoom in (scroll up)
+                print("Zooming In")
+            elif pinch_distance < last_pinch_distance:
+                pyautogui.scroll(int(zoom_level))  # Zoom out (scroll down)
+                print("Zooming Out")
+
+        # Update the last pinch distance to track in the next frame
+        return pinch_distance
+    else:
+        # Return None if not pinching
+        return None
+
+
+def is_rotate_gesture(landmark_list):
+    # Check angles for all fingers (except the ring finger) being straight (angle > 160 degrees)
+    thumb_angle = get_angle(landmark_list[1], landmark_list[2], landmark_list[4])
+    index_finger_angle = get_angle(landmark_list[5], landmark_list[6], landmark_list[8])
+    middle_finger_angle = get_angle(landmark_list[9], landmark_list[10], landmark_list[12])
+    pinky_angle = get_angle(landmark_list[17], landmark_list[18], landmark_list[20])
+
+    # Check if the ring finger is bent (angle < 90 degrees)
+    ring_finger_angle = get_angle(landmark_list[13], landmark_list[14], landmark_list[16])
+
+    # If all other fingers are straight, and ring finger is bent, return True for rotate gesture
+    return (
+                thumb_angle > 160 and index_finger_angle > 160 and middle_finger_angle > 160 and pinky_angle > 160 and ring_finger_angle < 90)
+
+
+def detect_hand_rotation(landmark_list):
+    # Get the angle between thumb and index finger
+    thumb_tip = landmark_list[4]  # Thumb tip
+    index_tip = landmark_list[8]  # Index finger tip
+    thumb_base = landmark_list[2]  # Thumb base for better rotation detection
+
+    # Calculate angle of rotation
+    delta_x = index_tip[0] - thumb_base[0]
+    delta_y = index_tip[1] - thumb_base[1]
+    rotation_angle = math.degrees(math.atan2(delta_y, delta_x))
+
+    # Return the angle
+    return rotation_angle
+
+
+def is_pinky_on_left(landmark_list):
+    # Get the coordinates for the pinky tip and index tip
+    pinky_tip = landmark_list[mpHands.HandLandmark.PINKY_TIP.value]
+    index_tip = landmark_list[mpHands.HandLandmark.INDEX_FINGER_TIP.value]
+
+    # Compare x-coordinates to determine the side of the pinky
+    return pinky_tip[0] < index_tip[0]  # Returns True if pinky is on the left
+
+
+def smooth_rotate_with_keys(rotation_angle, hold_time=0.1):
+    if rotation_angle < -30:
+        keyboard.press(Key.left)
+        time.sleep(hold_time)
+        keyboard.release(Key.left)
+        print("Rotating Left")
+    elif rotation_angle > 30:
+        keyboard.press(Key.right)
+        time.sleep(hold_time)
+        keyboard.release(Key.right)
+        print("Rotating Right")
+    elif -30 <= rotation_angle <= 30:
+        keyboard.press(Key.up)
+        time.sleep(hold_time)
+        keyboard.release(Key.up)
+        print("Rotating Up")
+
+
+def is_switch_window(landmark_list, threshold=30):
+    # Thumb tip = landmark 4, Index finger tip = landmark 8
+    thumb_tip = landmark_list[4]
+    index_tip = landmark_list[8]
+
+    # Calculate the Euclidean distance between thumb tip and index tip
+    distance = get_distance([thumb_tip, index_tip])
+
+    # If the distance is below a certain threshold, return True (they are touching)
+    return distance < threshold
+
+
+
+last_angle = None  # Initialize for tracking the pointer movement
+last_pinch_distance = None
+
+
 # Function to detect gestures
 # Passing in original frame, the landmark list, and the processed frame
 def detect_gesture(frame, landmark_list, processed):
+    # variables
+    global last_pinch_distance
+    global last_angle
+
+
+
     # If the length of the landmark list is greater than 21 (there is only 21)
     if len(landmark_list) >= 21:
         # 1st action: Move the mouse
@@ -138,6 +252,35 @@ def detect_gesture(frame, landmark_list, processed):
             label = random.randint(1, 1000)
             im1.save(f'my_screenshot_{label}.png')
             cv2.putText(frame, "Screenshot Taken", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+
+        # SWITCH WINDOW
+        elif is_switch_window(landmark_list):
+            # Simulate holding down Command and pressing Tab
+            pyautogui.keyDown('command')  # Hold down the Command key
+            time.sleep(0.2)
+            pyautogui.press('tab')  # Press the Tab key
+            pyautogui.keyUp('command')  # Release the Command key
+            cv2.putText(frame, "Command + Tab", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+
+
+
+        # ZOOM IN/OUT
+        last_pinch_distance = zoom_slider_control(landmark_list, last_pinch_distance)
+
+        # ROTATE
+        # Check for rotation gesture (all fingers out except the ring finger)
+        if len(landmark_list) >= 21:
+            # Check if the gesture for rotation is detected
+            if is_rotate_gesture(landmark_list):
+                # Get the current hand rotation angle
+                rotation_angle = detect_hand_rotation(landmark_list)
+
+                # Determine pinky's position
+                if is_pinky_on_left(landmark_list):
+                    # Modify rotation logic based on pinky position
+                    smooth_rotate_with_keys(-rotation_angle, hold_time=0.1)  # Rotate left if pinky is left
+                else:
+                    smooth_rotate_with_keys(rotation_angle, hold_time=0.1)  # Rotate right if pinky is right 
 
 # Main function
 def main():
