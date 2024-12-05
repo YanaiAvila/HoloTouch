@@ -280,7 +280,7 @@ def detect_gesture(frame, landmark_list, processed):
                     # Modify rotation logic based on pinky position
                     smooth_rotate_with_keys(-rotation_angle, hold_time=0.1)  # Rotate left if pinky is left
                 else:
-                    smooth_rotate_with_keys(rotation_angle, hold_time=0.1)  # Rotate right if pinky is right 
+                    smooth_rotate_with_keys(rotation_angle, hold_time=0.1)  # Rotate right if pinky is right
 
 # Main function
 def main():
@@ -345,5 +345,3 @@ def main():
 # If you import this to any other python file, this function will run
 if __name__ == '__main__':
     main()
-
-
