@@ -63,68 +63,154 @@ def move_mouse(index_finger_tip):
         # Move our mouse to this XY coordinate of index finger tip
         pyautogui.moveTo(x, y)
 
+def is_move_cursor(landmark_list):
+    return(
+        get_distance([landmark_list[4], landmark_list[5]]) < 50 and  # Thumb condition
+        get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90 and  # Index finger bent
+        get_angle(landmark_list[13], landmark_list[14], landmark_list[16]) < 50 and  # Ring finger bent
+        get_angle(landmark_list[17], landmark_list[18], landmark_list[20]) < 50  # Pinky finger bent
+    )
+
+
+
 # Function that check left click conditions and returns true or false
 def is_left_click(landmark_list, thumb_index_dist):
     return (
-        # Checks if index finger is bent AND middle finger is straight AND thumb is straight
-            get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 < thumb_index_dist and
-            get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) > 90
+        # Index finger bent
+        get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 and
+        # Middle finger straight
+        get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) > 90 and
+        # Ring finger bent
+        get_angle(landmark_list[13], landmark_list[14], landmark_list[16]) < 50 and
+        # Pinky finger bent
+        get_angle(landmark_list[17], landmark_list[18], landmark_list[20]) < 50 and
+        # Thumb straight based on distance
+        thumb_index_dist > 50
     )
 
 # Function that check right click conditions and returns true or false
 def is_right_click(landmark_list, thumb_index_dist):
     return (
-        # Checks if middle finger is bent AND index finger is straight AND thumb is straight
-            get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50 < thumb_index_dist and
-            get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90
+        # Middle finger bent
+        get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50 and
+        # Index finger straight
+        get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90 and
+        # Ring finger bent
+        get_angle(landmark_list[13], landmark_list[14], landmark_list[16]) < 50 and
+        # Pinky finger bent
+        get_angle(landmark_list[17], landmark_list[18], landmark_list[20]) < 50 and
+        # Thumb straight based on distance
+        thumb_index_dist > 50
     )
 
 # Function that check double click conditions and returns true or false
 def is_double_click(landmark_list, thumb_index_dist):
     return (
         # Checks if index finger is straight AND middle finger is straight AND thumb is straight
-            get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 < thumb_index_dist and
-            get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50
+        get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 < thumb_index_dist and
+        get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50
     )
 
 # Function that check screenshot conditions and returns true or false
 def is_screenshot(landmark_list, thumb_index_dist):
     return (
         # Checks if all are down (index, thumb, middle)
-            get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 and
-            get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50 and
-            thumb_index_dist < 50
+        get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) < 50 and
+        get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) < 50 and
+        thumb_index_dist < 50
     )
 
+# Function that check left click conditions and returns true or false
+def is_press_enter(landmark_list):
+    # Check angles for the pinky (bent) and other fingers (straight)
+    pinky_bent = get_angle(landmark_list[17], landmark_list[18], landmark_list[20]) < 50
+    index_straight = get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 160
+    middle_straight = get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) > 160
+    ring_straight = get_angle(landmark_list[13], landmark_list[14], landmark_list[16]) > 160
+    thumb_straight = get_angle(landmark_list[1], landmark_list[2], landmark_list[4]) > 160
 
-def zoom_slider_control(landmark_list, last_pinch_distance):
-    # Calculate current pinch distance between thumb (landmark 4) and index finger (landmark 8)
-    pinch_distance = get_distance([landmark_list[4], landmark_list[8]])
-
-    # Threshold for starting zoom (when pointer and thumb are close enough to "touch")
-    pinch_threshold = 20
-
-    # Only perform zoom when pinch distance is small enough (fingers are touching)
-    if pinch_distance < pinch_threshold:
-        # Map pinch distance to zoom level; the further apart, the stronger the zoom in/out
-        zoom_level = np.interp(pinch_distance, [0, 100], [-10, 10])  # Adjust zoom sensitivity
-
-        # If the new distance is significantly larger or smaller than the last distance, zoom in or out
-        if last_pinch_distance is not None:
-            if pinch_distance > last_pinch_distance:
-                pyautogui.scroll(int(zoom_level))  # Zoom in (scroll up)
-                print("Zooming In")
-            elif pinch_distance < last_pinch_distance:
-                pyautogui.scroll(int(zoom_level))  # Zoom out (scroll down)
-                print("Zooming Out")
-
-        # Update the last pinch distance to track in the next frame
-        return pinch_distance
-    else:
-        # Return None if not pinching
-        return None
+    return pinky_bent and index_straight and middle_straight and ring_straight and thumb_straight
 
 
+# Function that check left click conditions and returns true or false
+def is_open_tab(landmark_list):
+    # Check angles for the pinky (bent) and other fingers (straight)
+    pinky_bent = get_angle(landmark_list[17], landmark_list[18], landmark_list[20]) < 50
+    index_straight = get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 160
+    middle_straight = get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) > 160
+    ring_straight = get_angle(landmark_list[13], landmark_list[14], landmark_list[16]) > 160
+    thumb_straight = get_angle(landmark_list[1], landmark_list[2], landmark_list[4]) > 160
+
+    return pinky_bent and index_straight and middle_straight and ring_straight and thumb_straight
+
+
+# FOR GOOGLE EARTH ZOOM
+def is_keyboard_open(landmark_list, threshold=50):
+    pinky_tip = landmark_list[mpHands.HandLandmark.INDEX_FINGER_TIP.value]
+    thumb_tip = landmark_list[mpHands.HandLandmark.THUMB_TIP.value]
+
+    # Calculate the distance between pinky tip and thumb tip
+    distance = get_distance([pinky_tip, thumb_tip])
+
+    # Check if the distance is within the threshold
+    return distance < threshold
+
+# FOR GOOGLE EARTH ZOOM
+def zoom_control_pointer_thumb(landmark_list):
+    # Check if pointer and thumb are touching
+    is_touching = is_keyboard_open(landmark_list)
+
+    if is_touching:
+        # Zoom out when pinky and thumb touch
+        pyautogui.scroll(-2)  # Adjust scroll value for sensitivity
+        print("Keyobard open")
+
+    # Update and return the current state
+    return is_touching
+
+
+
+# FOR CHROME SCROLL and GOOGLE EARTH ZOOM ############################
+def is_thumb_middle_touching(landmark_list, threshold=50):
+    middle_tip = landmark_list[mpHands.HandLandmark.MIDDLE_FINGER_TIP.value]
+    thumb_tip = landmark_list[mpHands.HandLandmark.THUMB_TIP.value]
+
+    # Calculate the distance between middle finger tip and thumb tip
+    distance = get_distance([middle_tip, thumb_tip])
+
+    # Check if the distance is within the threshold
+    return distance < threshold
+
+def is_thumb_middle_apart(landmark_list, threshold=80, threshold2=150):
+    middle_tip = landmark_list[mpHands.HandLandmark.MIDDLE_FINGER_TIP.value]
+    thumb_tip = landmark_list[mpHands.HandLandmark.THUMB_TIP.value]
+
+    # Calculate the distance between middle finger tip and thumb tip
+    distance = get_distance([middle_tip, thumb_tip])
+
+    # Check if the distance is within the threshold
+    return threshold < distance < threshold2
+
+
+def zoom_control_thumb_middle(landmark_list):
+    # Check if thumb and middle finger are touching
+    is_touching = is_thumb_middle_touching(landmark_list)
+    is_apart = is_thumb_middle_apart(landmark_list)
+
+    if is_touching:
+        # Zoom out when thumb and middle finger touch
+        pyautogui.scroll(-30)  # Adjust scroll value for sensitivity
+        print("Scroll Down")
+    elif is_apart:
+        # Zoom in when thumb and middle finger are not touching
+        pyautogui.scroll(30)  # Adjust scroll value for sensitivity
+        print("Scroll Up")
+
+    # Update and return the current state
+    return is_touching
+
+
+# ROTATE ######################################
 def is_rotate_gesture(landmark_list):
     # Check angles for all fingers (except the ring finger) being straight (angle > 160 degrees)
     thumb_angle = get_angle(landmark_list[1], landmark_list[2], landmark_list[4])
@@ -181,22 +267,66 @@ def smooth_rotate_with_keys(rotation_angle, hold_time=0.1):
         keyboard.release(Key.up)
         print("Rotating Up")
 
+# Function to check if thumb and pinky are touching
+def is_switch_window(landmark_list):
+    # Checks if thumb and pinky are touching
+    thumb_tip = landmark_list[mp.solutions.hands.HandLandmark.THUMB_TIP]
+    pinky_tip = landmark_list[mp.solutions.hands.HandLandmark.PINKY_TIP]
+    distance = get_distance([thumb_tip, pinky_tip])
+    return distance < 30
 
-def is_switch_window(landmark_list, threshold=30):
-    # Thumb tip = landmark 4, Index finger tip = landmark 8
-    thumb_tip = landmark_list[4]
-    index_tip = landmark_list[8]
 
-    # Calculate the Euclidean distance between thumb tip and index tip
-    distance = get_distance([thumb_tip, index_tip])
+# Function to check if thumb and pinky are touching
+def is_switch_tab(landmark_list):
+    # Checks if thumb and pinky are touching
+    thumb_tip = landmark_list[mp.solutions.hands.HandLandmark.THUMB_TIP]
+    ring_tip = landmark_list[mp.solutions.hands.HandLandmark.RING_FINGER_TIP]
+    distance = get_distance([thumb_tip, ring_tip])
+    return distance < 30
 
-    # If the distance is below a certain threshold, return True (they are touching)
+
+### COPY AND PASTE
+def is_copy(landmark_list, threshold=50):
+    # Get coordinates for index and middle finger tips
+    index_tip = landmark_list[mpHands.HandLandmark.INDEX_FINGER_TIP.value]
+    middle_tip = landmark_list[mpHands.HandLandmark.MIDDLE_FINGER_TIP.value]
+
+    # Calculate the distance between index and middle finger tips
+    distance = get_distance([index_tip, middle_tip])
+
+    # Check if the distance is less than the threshold, meaning they are touching
     return distance < threshold
+
+
+def are_cut_fingers_down(landmark_list):
+    # Check if thumb, ring, and pinky are down (bent)
+    thumb_angle = get_angle(landmark_list[4], landmark_list[3], landmark_list[2])  # Thumb bend angle
+    ring_angle = get_angle(landmark_list[13], landmark_list[14], landmark_list[16])  # Ring finger bend angle
+    pinky_angle = get_angle(landmark_list[17], landmark_list[18], landmark_list[20])  # Pinky finger bend angle
+
+    # Define a threshold for bent fingers (e.g., less than 50° for bent)
+    return thumb_angle > 90 and ring_angle < 50 and pinky_angle < 50
+
+
+
+def is_fullscreen(landmark_list):
+    # Check angles for the pinky (bent) and other fingers (straight)
+    pinky_bent = get_angle(landmark_list[17], landmark_list[18], landmark_list[20]) >160
+    index_straight = get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) <50
+    middle_straight = get_angle(landmark_list[9], landmark_list[10], landmark_list[12]) > 160
+    ring_straight = get_angle(landmark_list[13], landmark_list[14], landmark_list[16]) > 160
+    thumb_straight = get_angle(landmark_list[1], landmark_list[2], landmark_list[4]) > 160
+
+    return pinky_bent and index_straight and middle_straight and ring_straight and thumb_straight
 
 
 
 last_angle = None  # Initialize for tracking the pointer movement
 last_pinch_distance = None
+# Initialize the last state for zoom control
+# Initialize the last action time
+last_action_time = 0
+debounce_delay = 0.5  # Minimum time (in seconds) between consecutive triggers
 
 
 # Function to detect gestures
@@ -205,8 +335,13 @@ def detect_gesture(frame, landmark_list, processed):
     # variables
     global last_pinch_distance
     global last_angle
+    global last_action_time
+    current_time = time.time()
 
 
+    last_zoom_state = False
+    # Initialize the state of Alt key press
+    alt_pressed = False
 
     # If the length of the landmark list is greater than 21 (there is only 21)
     if len(landmark_list) >= 21:
@@ -219,53 +354,104 @@ def detect_gesture(frame, landmark_list, processed):
         # 4 and 5 are tips of index and thumb
         thumb_index_dist = get_distance([landmark_list[4], landmark_list[5]])
 
+        # Check for the Alt-Tab gesture
+        #alt_pressed = alt_tab_gesture(landmark_list, alt_pressed)
         # MOVE MOUSE
         # If the thumb and index finger distance is close, and the index finger is upright...
-        if get_distance([landmark_list[4], landmark_list[5]]) < 50  and get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90:
+        if is_move_cursor(landmark_list):
             # Move the mouse according to the index finger tip
             move_mouse(index_finger_tip)
 
+        # if get_distance([landmark_list[4], landmark_list[5]]) < 50  and get_angle(landmark_list[5], landmark_list[6], landmark_list[8]) > 90:
+        #     # Move the mouse according to the index finger tip
+        #     move_mouse(index_finger_tip)
+
         # LEFT CLICK
-        elif is_left_click(landmark_list,  thumb_index_dist):
+        elif is_left_click(landmark_list,  thumb_index_dist) and (current_time - last_action_time > debounce_delay):
             # Mouse press right
             mouse.press(Button.left)
             # And release
             mouse.release(Button.left)
             # Put text on screen
             cv2.putText(frame, "Left Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            last_action_time = current_time
 
         # RIGHT CLICK
-        elif is_right_click(landmark_list, thumb_index_dist):
+        elif is_right_click(landmark_list, thumb_index_dist) and (current_time - last_action_time > debounce_delay):
             # Mouse press left
             mouse.press(Button.right)
             # And release
             mouse.release(Button.right)
             # Put text on screen
             cv2.putText(frame, "Right Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            last_action_time = current_time
 
-        # DOUBLE CLICK
-        elif is_double_click(landmark_list, thumb_index_dist):
-            pyautogui.doubleClick()
-            cv2.putText(frame, "Double Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+        # # DOUBLE CLICK
+        # elif is_double_click(landmark_list, thumb_index_dist) and (current_time - last_action_time > debounce_delay):
+        #     pyautogui.doubleClick()
+        #     cv2.putText(frame, "Double Click", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+        #     last_action_time = current_time
+
+        # SCREENSHOT
         elif is_screenshot(landmark_list,thumb_index_dist ):
             im1 = pyautogui.screenshot()
             label = random.randint(1, 1000)
             im1.save(f'my_screenshot_{label}.png')
             cv2.putText(frame, "Screenshot Taken", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+            last_action_time = current_time
 
         # SWITCH WINDOW
-        elif is_switch_window(landmark_list):
-            # Simulate holding down Command and pressing Tab
-            pyautogui.keyDown('command')  # Hold down the Command key
-            time.sleep(0.2)
-            pyautogui.press('tab')  # Press the Tab key
-            pyautogui.keyUp('command')  # Release the Command key
-            cv2.putText(frame, "Command + Tab", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+        elif is_switch_window(landmark_list) and (current_time - last_action_time > debounce_delay):
+            # Press and release Ctrl + Alt + Tab
+            pyautogui.hotkey('ctrl', 'alt', 'tab')
+            last_action_time = current_time
 
+        # SWITCH TAB
+        elif is_switch_tab(landmark_list) and (current_time - last_action_time > debounce_delay):
+            # Press and release Ctrl + Alt + Tab
+            pyautogui.hotkey('ctrl', 'tab')
+            last_action_time = current_time
+
+
+        # PRESS ENTER
+        elif is_press_enter(landmark_list) and (current_time - last_action_time > debounce_delay):
+            print("Pinky bent - enter pressed!")
+            pyautogui.hotkey("enter")
+            cv2.putText(frame, "Enter pressed", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            last_action_time = current_time
+
+
+        # KEYBOARD
+        elif is_keyboard_open(landmark_list) and (current_time - last_action_time > debounce_delay):
+            # Zoom out when pinky and thumb touch
+            # Simulate pressing Windows Key, Ctrl, and O
+            #pyautogui.hotkey('win', 'ctrl', 'o')  # Opens OSK
+            pyautogui.moveTo(1527, 1027)
+
+            pyautogui.click()
+            print("Keyboard open")
+            last_action_time = current_time
+
+        # FULLSCREEN
+        elif is_fullscreen(landmark_list) and (current_time - last_action_time > debounce_delay):
+        # Simulate pressing the F11 key
+            pyautogui.press('f11')
+            print("fullscreen")
+            last_action_time = current_time
+
+
+        # # COPY
+        # # If both conditions are true, perform the desired action
+        # if are_cut_fingers_down(landmark_list) and is_copy(landmark_list):
+        #     print("Peace sign detected! Performing action...")
+        #     # Example action (e.g., copy something with Ctrl+C)
+        #     pyautogui.hotkey('ctrl', 'c')  # This simulates pressing Ctrl+C to copy
 
 
         # ZOOM IN/OUT
-        last_pinch_distance = zoom_slider_control(landmark_list, last_pinch_distance)
+        #last_pinch_distance = zoom_slider_control(landmark_list, last_pinch_distance)
+
+        zoom_control_thumb_middle(landmark_list)
 
         # ROTATE
         # Check for rotation gesture (all fingers out except the ring finger)
